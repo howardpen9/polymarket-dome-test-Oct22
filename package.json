@@ -1,0 +1,38 @@
+{
+  "name": "polymarket-trading-terminal",
+  "version": "1.0.0",
+  "description": "A modern trading terminal for Polymarket prediction markets",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "pnpm -C apps/web dev",
+    "dev:all": "concurrently \"pnpm -C apps/web dev\" \"pnpm -C apps/backend dev\"",
+    "build": "pnpm -C packages/core build && pnpm -C apps/web build",
+    "build:core": "pnpm -C packages/core build",
+    "build:web": "pnpm -C apps/web build",
+    "start": "pnpm -C apps/web start",
+    "lint": "pnpm -C apps/web lint",
+    "lint:fix": "pnpm -C apps/web lint --fix",
+    "type-check": "pnpm -C apps/web type-check",
+    "clean": "rm -rf node_modules apps/*/node_modules packages/*/node_modules apps/*/dist packages/*/dist",
+    "install:all": "pnpm install"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.0"
+  },
+  "packageManager": "pnpm@9.12.0",
+  "keywords": [
+    "polymarket",
+    "trading",
+    "prediction-markets",
+    "nextjs",
+    "typescript",
+    "web3",
+    "dome-api"
+  ],
+  "author": "Your Name",
+  "license": "MIT"
+}
