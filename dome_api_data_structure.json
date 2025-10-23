@@ -1,0 +1,225 @@
+{
+  "dome_api_data_structure": {
+    "base_url": "https://api.domeapi.io/v1",
+    "authentication": "Bearer Token",
+    "cache_duration": 30000,
+    "endpoints": {
+      "/polymarket/orders": {
+        "description": "獲取市場訂單數據",
+        "request_params": {
+          "market_slug": "string",
+          "limit": "number"
+        },
+        "response_example": {
+          "orders": [
+            {
+              "id": "order_123456",
+              "market_slug": "us-government-shutdown-by-october-1",
+              "token_id": "0x1234567890abcdef",
+              "condition_id": "0xabcdef1234567890",
+              "side": "BUY",
+              "price": "0.65",
+              "size": "100.0",
+              "shares_normalized": "100.0",
+              "timestamp": 1699123456,
+              "user": "0xuser123456789",
+              "status": "OPEN"
+            }
+          ]
+        }
+      },
+      "/polymarket/orderbooks": {
+        "description": "獲取orderbook快照數據",
+        "request_params": {
+          "token_id": "string",
+          "start_time": "number",
+          "end_time": "number",
+          "limit": "number"
+        },
+        "response_example": {
+          "snapshots": [
+            {
+              "timestamp": 1699123456,
+              "assetId": "0x1234567890abcdef",
+              "market": {
+                "id": "market_123",
+                "name": "US Government Shutdown"
+              },
+              "bids": [
+                {
+                  "price": "0.64",
+                  "size": "50.0"
+                },
+                {
+                  "price": "0.63",
+                  "size": "75.0"
+                }
+              ],
+              "asks": [
+                {
+                  "price": "0.66",
+                  "size": "25.0"
+                },
+                {
+                  "price": "0.67",
+                  "size": "100.0"
+                }
+              ],
+              "tickSize": "0.001",
+              "minOrderSize": "5",
+              "negRisk": false,
+              "hash": "0xhash123456789"
+            }
+          ]
+        }
+      },
+      "/polymarket/candlesticks/{conditionId}": {
+        "description": "獲取K線數據",
+        "request_params": {
+          "conditionId": "string (URL path parameter)"
+        },
+        "response_example": {
+          "candlesticks": [
+            [
+              {
+                "end_period_ts": 1699123500,
+                "price": {
+                  "open_dollars": "0.65",
+                  "high_dollars": "0.67",
+                  "low_dollars": "0.64",
+                  "close_dollars": "0.66"
+                },
+                "volume": 150.0
+              },
+              {
+                "end_period_ts": 1699123560,
+                "price": {
+                  "open_dollars": "0.66",
+                  "high_dollars": "0.68",
+                  "low_dollars": "0.65",
+                  "close_dollars": "0.67"
+                },
+                "volume": 200.0
+              }
+            ]
+          ]
+        }
+      }
+    },
+    "data_processing": {
+      "price_conversion": {
+        "description": "字符串價格轉換為數字",
+        "example": "parseFloat('0.65') -> 0.65"
+      },
+      "timestamp_conversion": {
+        "description": "Unix時間戳轉換為ISO字符串",
+        "example": "new Date(1699123456 * 1000).toISOString() -> '2023-11-04T12:30:56.000Z'"
+      },
+      "cumulative_calculation": {
+        "description": "計算累積總量",
+        "example": {
+          "input": [
+            {"price": 0.65, "size": 50},
+            {"price": 0.64, "size": 75}
+          ],
+          "output": [
+            {"price": 0.65, "size": 50, "total": 50},
+            {"price": 0.64, "size": 75, "total": 125}
+          ]
+        }
+      }
+    },
+    "error_handling": {
+      "rate_limit": {
+        "status_code": 429,
+        "message": "Rate limit exceeded. Please wait before making more requests."
+      },
+      "general_error": {
+        "format": "Dome {path} {status}: {statusText}",
+        "example": "Dome /polymarket/orders 404: Not Found"
+      }
+    },
+    "caching": {
+      "strategy": "30秒緩存",
+      "implementation": {
+        "cache_key": "{path}{queryString}",
+        "cache_value": {
+          "data": "any",
+          "timestamp": "number"
+        }
+      }
+    },
+    "fallback_mechanisms": {
+      "orderbook_fallback": {
+        "description": "當orderbook API不可用時，從訂單數據重建orderbook",
+        "process": [
+          "1. 獲取最近50個訂單",
+          "2. 按價格分組BUY和SELL訂單",
+          "3. 計算每個價格層級的總量",
+          "4. 生成orderbook結構"
+        ]
+      },
+      "candlesticks_fallback": {
+        "description": "當K線API不可用時，從訂單數據生成K線",
+        "process": [
+          "1. 獲取最近200個訂單",
+          "2. 按時間間隔分組",
+          "3. 計算每組的OHLCV",
+          "4. 生成K線數據"
+        ]
+      }
+    },
+    "usage_examples": {
+      "get_market_price": {
+        "function": "getMarketPriceBySlug(apiKey, market_slug)",
+        "process": [
+          "1. 調用 /polymarket/orders 獲取最新訂單",
+          "2. 提取最新訂單的價格",
+          "3. 返回 { price: number }"
+        ]
+      },
+      "get_candles": {
+        "function": "getCandlesBySlug(apiKey, market_slug, interval)",
+        "process": [
+          "1. 獲取condition_id",
+          "2. 調用 /polymarket/candlesticks/{conditionId}",
+          "3. 處理K線數據格式",
+          "4. 備用：從訂單數據生成K線"
+        ]
+      },
+      "get_orderbook": {
+        "function": "getOrderbookBySlug(apiKey, market_slug)",
+        "process": [
+          "1. 獲取token_id",
+          "2. 調用 /polymarket/orderbooks",
+          "3. 處理bids和asks數據",
+          "4. 計算累積總量",
+          "5. 備用：從訂單數據重建orderbook"
+        ]
+      }
+    },
+    "data_types": {
+      "price": "string -> parseFloat -> number",
+      "size": "string -> parseFloat -> number", 
+      "timestamp": "number -> Date -> ISO string",
+      "side": "BUY | SELL",
+      "order_type": "LIMIT | MARKET",
+      "time_in_force": "GTC | IOC | FOK"
+    },
+    "notes": {
+      "important": [
+        "所有價格和數量數據以字符串形式返回",
+        "需要手動轉換為數字類型",
+        "時間戳為Unix格式，需要轉換",
+        "實現了30秒緩存避免頻繁請求",
+        "有完整的錯誤處理和備用機制"
+      ],
+      "limitations": [
+        "API有速率限制",
+        "某些端點可能不可用",
+        "數據可能有延遲",
+        "需要有效的API密鑰"
+      ]
+    }
+  }
+}
